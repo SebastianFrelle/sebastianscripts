@@ -139,3 +139,6 @@ game1 = Game.new([sebastian, kenichi], [simon], 10, 0)
 game2 = Game.new([sebastian], [simon], 10, 7)
 game3 = Game.new([sebastian], [kenichi, simon], 5, 3)
 game4 = Game.new([sebastian,daniel], [simon, kenichi], 2, 6)
+
+all_opponents = sebastian.games.map { |game| game.get_opponents(sebastian) }.flatten
+puts all_opponents.group_by { |player| player.name }.max_by { |player, games| games.count }.first
