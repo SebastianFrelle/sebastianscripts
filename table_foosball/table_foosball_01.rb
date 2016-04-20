@@ -3,6 +3,7 @@ require "securerandom"
 class Player
   def initialize name
     @name = name
+
     @timestamp = Time.now
     @id = SecureRandom.uuid
   end
@@ -82,15 +83,12 @@ end
 
 ### testing
 
-sebastian = Player.new("Sebastian")
-daniel = Player.new("Daniel")
-simon = Player.new("Simon")
-kenichi = Player.new("Kenichi")
+# sebastian = Player.new("Sebastian")
+# daniel = Player.new("Daniel")
+# simon = Player.new("Simon")
+# kenichi = Player.new("Kenichi")
 
-Game.create([sebastian, kenichi], [simon], 10, 0)
-Game.create([sebastian], [simon], 10, 7)
-Game.create([sebastian], [kenichi, simon], 5, 3)
-Game.create([sebastian, daniel], [simon, kenichi], 2, 6)
-
-p sebastian.most_wins_against
-p sebastian.most_frequent_opponent
+# Game.create([sebastian, kenichi], [simon], 10, 0)
+# Game.create([sebastian], [simon], 10, 7)
+# Game.create([sebastian], [kenichi, simon], 5, 3)
+# Game.create([sebastian, daniel], [simon, kenichi], 2, 6)
