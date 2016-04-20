@@ -21,21 +21,21 @@ class Player
     games.select {|game| game.loser.include?(self)}
   end
 
-  def most_wins_against
-    all_defeated_opponents = games.map { |game| game.opponents(self) }.flatten
-  end
-
-  def most_losses_against
-    all_winning_opponents = games.map { |game| game.opponents(self) }.flatten
-  end
-
   def games_against(opponent)
     games.select { |game| game.opponents.include?(opponent) }
   end
-
-  def most_frequent_opponent
+  
+  def most_frequent_opponent(games = self.games)
     all_opponents = games.map { |game| game.opponents(self) }.flatten
     all_opponents.group_by { |player| player.name }.max_by { |player, games| games.count }.first
+  end
+  
+  def most_wins_against
+    most_frequent_opponent won_games
+  end
+
+  def most_losses_against
+    most_frequent_opponent lost_games
   end
 
 end
@@ -92,3 +92,5 @@ Game.create([sebastian], [simon], 10, 7)
 Game.create([sebastian], [kenichi, simon], 5, 3)
 Game.create([sebastian, daniel], [simon, kenichi], 2, 6)
 
+p sebastian.most_wins_against
+p sebastian.most_frequent_opponent
