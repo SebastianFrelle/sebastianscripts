@@ -8,9 +8,4 @@ class FoosballTest < Minitest::Test
     @simon = Player.new("Simon")
     @kenichi = Player.new("Kenichi")
   end
-
-  def test_create_game_with_two_players
-    game = Game.create([@sebastian], [@simon], 10, 0)
-    assert_equal [@sebastian], game.winner
-  end
 end
