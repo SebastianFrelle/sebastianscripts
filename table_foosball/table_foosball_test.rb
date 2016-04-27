@@ -13,6 +13,4 @@ class FoosballTest < Minitest::Test
     game = Game.create([@sebastian], [@simon], 10, 0)
     assert_equal [@sebastian], game.winner
   end
-
-  # more tests
 end
