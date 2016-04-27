@@ -49,6 +49,7 @@ class Game
   def self.create(side1, side2, side1score, side2score)
     @games ||= []
     @games << Game.new(side1, side2, side1score, side2score)
+    @games.last
   end
 
   def initialize side1, side2, side1score, side2score
@@ -69,7 +70,7 @@ class Game
   end
 
   def winner
-    return (@side1score > @side2score) ? @side1 : @side2
+    (@side1score > @side2score) ? @side1 : @side2
   end
 
   def loser
@@ -83,12 +84,14 @@ end
 
 ### testing
 
-# sebastian = Player.new("Sebastian")
-# daniel = Player.new("Daniel")
-# simon = Player.new("Simon")
-# kenichi = Player.new("Kenichi")
+sebastian = Player.new("Sebastian")
+daniel = Player.new("Daniel")
+simon = Player.new("Simon")
+kenichi = Player.new("Kenichi")
 
 # Game.create([sebastian, kenichi], [simon], 10, 0)
 # Game.create([sebastian], [simon], 10, 7)
 # Game.create([sebastian], [kenichi, simon], 5, 3)
 # Game.create([sebastian, daniel], [simon, kenichi], 2, 6)
+
+p Game.create([@sebastian], [@simon], 10, 0)
