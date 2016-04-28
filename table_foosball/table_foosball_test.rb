@@ -12,15 +12,20 @@ class FoosballTest < Minitest::Test
   # Positive testing
   def test_create_game_with_two_players
     game = Game.create([@sebastian], [@simon], 10, 0)
+    assert_equal [@sebastian, @simon], game.players
     assert_equal [@sebastian], game.winner
+    assert_equal [@simon], game.loser
   end
 
   def test_create_game_with_multiple_players
     game = Game.create([@sebastian, @daniel], [@simon, @kenichi], 10, 0)
+    assert_equal [@sebastian, @daniel, @simon, @kenichi], game.players
     assert_equal [@sebastian, @daniel], game.winner
+    assert_equal [@simon, @kenichi], game.loser
   end
 
-  def method_name
-    
+  def test_create_game_with_asymmetrical_no_of_players
+    game = Game.create([@sebastian], [@simon, @daniel], 8, 2)
+    assert_equal [@sebastian], game.winner
   end
 end
