@@ -27,5 +27,6 @@ class FoosballTest < Minitest::Test
   def test_create_game_with_asymmetrical_no_of_players
     game = Game.create([@sebastian], [@simon, @daniel], 8, 2)
     assert_equal [@sebastian], game.winner
+    assert_equal [@simon, @daniel], game.loser
   end
 end
