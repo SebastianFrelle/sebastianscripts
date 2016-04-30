@@ -28,4 +28,31 @@ class FoosballTest < Minitest::Test
     assert_equal [@sebastian], game.winner
     assert_equal [@simon, @daniel], game.loser
   end
+
+  def test_won_games
+    game1 = Game.create([@simon, @daniel, @kenichi], [@sebastian], 10, 2)
+    game2 = Game.create([@simon, @daniel], [@sebastian, @kenichi], 10, 6)
+    game3 = Game.create([@simon, @daniel], [@sebastian, @kenichi], 10, 7)
+    game4 = Game.create([@simon, @kenichi], [@daniel], 10, 6)
+    assert_equal [game1, game2, game3, game4], @simon.won_games
+    assert_equal [], @sebastian.won_games
+    assert_equal [game1, game2, game3], @sebastian.games_against(@simon)
+  end
+
+  def test_lost_games
+    game1 = Game.create([@simon, @daniel, @kenichi], [@sebastian], 10, 2)
+    game2 = Game.create([@simon, @daniel], [@sebastian, @kenichi], 10, 6)
+    game3 = Game.create([@simon, @daniel], [@sebastian, @kenichi], 10, 7)
+    game4 = Game.create([@simon, @kenichi], [@daniel], 10, 6)
+    assert_equal [game1, game2, game3], @sebastian.lost_games
+    assert_equal "Simon", @sebastian.most_losses_against
+  end
+
+  def test_get_player_opponents
+    game1 = Game.create([@simon, @daniel, @kenichi], [@sebastian], 10, 2)
+    game2 = Game.create([@simon, @daniel], [@sebastian, @kenichi], 10, 6)
+    game3 = Game.create([@simon, @daniel], [@sebastian, @kenichi], 10, 7)
+    game4 = Game.create([@simon, @kenichi], [@daniel], 10, 6)
+    assert_equal [@simon, @daniel, @kenichi], game1.opponents(@sebastian)
+  end
 end
