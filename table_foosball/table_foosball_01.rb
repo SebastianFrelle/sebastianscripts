@@ -81,17 +81,3 @@ class Game
     @side1.include?(player) ? @side2 : @side1
   end
 end
-
-### testing
-
-sebastian = Player.new("Sebastian")
-daniel = Player.new("Daniel")
-simon = Player.new("Simon")
-kenichi = Player.new("Kenichi")
-
-# Game.create([sebastian, kenichi], [simon], 10, 0)
-# Game.create([sebastian], [simon], 10, 7)
-# Game.create([sebastian], [kenichi, simon], 5, 3)
-# Game.create([sebastian, daniel], [simon, kenichi], 2, 6)
-
-p Game.create([@sebastian], [@simon], 10, 0)
