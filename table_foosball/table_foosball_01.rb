@@ -28,7 +28,7 @@ class Player
 
   def most_frequent_opponent(games = self.games)
     all_opponents = games.map { |game| game.opponents(self) }.flatten
-    all_opponents.group_by { |player| player.name }.max_by { |player, games| games.count }.first
+    all_opponents.group_by { |player| player }.max_by { |player, games| games.count}.first
   end
 
   def most_wins_against

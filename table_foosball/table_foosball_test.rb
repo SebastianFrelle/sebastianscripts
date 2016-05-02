@@ -45,5 +45,8 @@ class FoosballTest < Minitest::Test
     assert_equal [game2, game3, game4], @sebastian.games
     assert_equal [game2, game3], @sebastian.won_games
     assert_equal [game4], @sebastian.lost_games
+
+    assert_equal [game1, game2, game3], @simon.games_against(@daniel)
+    assert_equal @daniel, @simon.most_frequent_opponent
   end
 end
