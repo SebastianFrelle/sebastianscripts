@@ -27,6 +27,10 @@ class Player
   end
 
   def most_frequent_opponent(games = self.games)
+    if games.empty?
+      return nil
+    end
+
     all_opponents = games.map { |game| game.opponents(self) }.flatten
     all_opponents.group_by { |player| player }.max_by { |player, games| games.count}.first
   end
