@@ -51,6 +51,14 @@ class FoosballTest < Minitest::Test
     assert_equal [game2, game3], @sebastian.won_games
     assert_equal [game4], @sebastian.lost_games
 
+  end
+
+  def test_get_player_vs_player_statistics
+    game1 = Game.create([@simon], [@daniel, @kenichi], 10, 0)
+    game2 = Game.create([@sebastian, @simon], [@daniel], 10, 4)
+    game3 = Game.create([@simon, @kenichi, @sebastian], [@daniel], 10, 9)
+    game4 = Game.create([@simon, @kenichi, @daniel], [@sebastian], 10, 8)
+
     assert_equal [game1, game2, game3], @simon.games_against(@daniel)
     assert_equal @daniel, @simon.most_frequent_opponent
     assert_equal @daniel, @simon.most_wins_against
