@@ -26,12 +26,12 @@ class Player
     games.select { |game| game.opponents(self).include?(opponent) }
   end
 
-  def most_frequent_opponent(games = self.games)
-    if games.empty?
+  def most_frequent_opponent(game_set = self.games)
+    if game_set.empty?
       return nil
     end
 
-    all_opponents = games.map { |game| game.opponents(self) }.flatten
+    all_opponents = game_set.map { |game| game.opponents(self) }.flatten
     all_opponents.group_by { |player| player }.max_by { |player, games| games.count}.first
   end
 
