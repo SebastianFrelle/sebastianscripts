@@ -67,7 +67,7 @@ class Game
     @id = SecureRandom.uuid
   end
 
-  attr_accessor :side1, :side2, :side1score, :side2score, :timestamp, :id
+  attr_accessor :side1, :side2, :side1score, :side2score, :timestamp, :id, :games
 
   def players
     @side1 + @side2

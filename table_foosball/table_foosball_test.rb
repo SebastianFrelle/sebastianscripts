@@ -9,6 +9,10 @@ class FoosballTest < Minitest::Test
     @kenichi = Player.new("Kenichi")
   end
 
+  def teardown
+    Game.games = []
+  end
+
   def test_create_new_player
     frederik = Player.new("Frederik")
     assert_equal "Frederik", frederik.name
