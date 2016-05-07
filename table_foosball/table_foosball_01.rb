@@ -23,12 +23,14 @@ class Player
   end
 
   def games_against(opponent)
-    games.select { |game| game.opponents.include?(opponent) }
+    games.select { |game| game.opponents(self).include?(opponent) }
   end
 
-  def most_frequent_opponent(games = self.games)
-    all_opponents = games.map { |game| game.opponents(self) }.flatten
-    all_opponents.group_by { |player| player.name }.max_by { |player, games| games.count }.first
+  def most_frequent_opponent(game_set = self.games)
+    return nil if game_set.empty?
+
+    all_opponents = game_set.map { |game| game.opponents(self) }.flatten
+    all_opponents.group_by { |player| player }.max_by { |player, games| games.count}.first
   end
 
   def most_wins_against
@@ -43,7 +45,11 @@ end
 
 class Game
   def self.all
-    @games
+    @games || []
+  end
+
+  def self.games=(game_set)
+    @games = game_set
   end
 
   def self.create(side1, side2, side1score, side2score)
