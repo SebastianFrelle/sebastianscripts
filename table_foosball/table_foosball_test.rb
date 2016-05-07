@@ -15,7 +15,11 @@ class FoosballTest < Minitest::Test
 
   def test_create_new_player
     frederik = Player.new("Frederik")
+    
     assert_equal "Frederik", frederik.name
+    refute_nil frederik.timestamp
+    refute_nil frederik.id
+    
     assert_empty frederik.games
   end
 
