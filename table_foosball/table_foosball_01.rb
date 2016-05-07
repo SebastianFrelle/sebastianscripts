@@ -1,3 +1,4 @@
+require_relative "./database"
 require "securerandom"
 
 class Player
@@ -46,14 +47,17 @@ class Player
 end
 
 class Game
-  def self.all
-    @games
-  end
+  class << self
+    def games
+      @games ||= database.load
+    end
+    alias_method :all, :games
 
-  def self.create(side1, side2, side1score, side2score)
-    @games ||= []
-    @games << Game.new(side1, side2, side1score, side2score)
-    @games.last
+    def create(side1, side2, side1score, side2score)
+      games << Game.new(side1, side2, side1score, side2score)
+      persist(games)
+      games.last
+    end
   end
 
   def initialize side1, side2, side1score, side2score
@@ -83,5 +87,15 @@ class Game
 
   def opponents player
     @side1.include?(player) ? @side2 : @side1
+  end
+
+  private
+
+  def self.database
+    @database ||= Database.new(:games)
+  end
+
+  def self.persist(objects)
+    database.save(objects)
   end
 end
