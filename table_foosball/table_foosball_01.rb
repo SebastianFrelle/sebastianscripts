@@ -27,9 +27,7 @@ class Player
   end
 
   def most_frequent_opponent(game_set = self.games)
-    if game_set.empty?
-      return nil
-    end
+    return nil if game_set.empty?
 
     all_opponents = game_set.map { |game| game.opponents(self) }.flatten
     all_opponents.group_by { |player| player }.max_by { |player, games| games.count}.first
@@ -47,7 +45,11 @@ end
 
 class Game
   def self.all
-    @games
+    @games || []
+  end
+
+  def self.games=(game_set)
+    @games = game_set
   end
 
   def self.create(side1, side2, side1score, side2score)
@@ -67,7 +69,7 @@ class Game
     @id = SecureRandom.uuid
   end
 
-  attr_accessor :side1, :side2, :side1score, :side2score, :timestamp, :id, :games
+  attr_accessor :side1, :side2, :side1score, :side2score, :timestamp, :id
 
   def players
     @side1 + @side2
