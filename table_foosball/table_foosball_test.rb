@@ -9,9 +9,17 @@ class FoosballTest < Minitest::Test
     @kenichi = Player.new("Kenichi")
   end
 
+  def teardown
+    Game.games = []
+  end
+
   def test_create_new_player
     frederik = Player.new("Frederik")
+    
     assert_equal "Frederik", frederik.name
+    refute_nil frederik.timestamp
+    refute_nil frederik.id
+    
     assert_empty frederik.games
   end
 
@@ -24,6 +32,9 @@ class FoosballTest < Minitest::Test
 
     assert_equal 10, game.side1score
     assert_equal 0, game.side2score
+
+    refute_nil game.timestamp
+    refute_nil game.id
 
     assert_equal [game], @sebastian.games
     assert_equal [game], @simon.games
