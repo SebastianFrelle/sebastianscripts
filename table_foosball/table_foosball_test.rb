@@ -33,6 +33,9 @@ class FoosballTest < Minitest::Test
     assert_equal 10, game.side1score
     assert_equal 0, game.side2score
 
+    refute_nil game.timestamp
+    refute_nil game.id
+
     assert_equal [game], @sebastian.games
     assert_equal [game], @simon.games
   end
