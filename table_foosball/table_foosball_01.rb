@@ -97,3 +97,16 @@ class Game
     database.save(objects)
   end
 end
+
+sebastian = Player.new("sebastian")
+simon = Player.new("simon")
+daniel = Player.new("daniel")
+kenichi = Player.new("kenichi")
+
+p Game.all
+
+Game.create([sebastian, simon], [daniel, kenichi], 10, 0)
+Game.create([sebastian, simon], [daniel, kenichi], 10, 0)
+Game.create([sebastian, simon], [daniel, kenichi], 10, 0)
+
+p Game.all
