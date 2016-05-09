@@ -1,3 +1,5 @@
 /notes
 *.sdb
 test.*
+*.sublime-workspace
+*.sublime-project
