@@ -23,25 +23,24 @@ class Database
     # A ruby object's only state is its instance variables.
     # You may have to resort to meta-programming here with
     # #instance_variable_get and #instance_variable_set
+    return objs unless objs.kind_of?(Array)
+
     serialized_objects = ""
-    template = "instance_variable_%{number}:(%{variable_name},%{value});"
+    template = "%{variable_name}, (%{variable_value}):"
 
     objs.each do |object|
-      serialized_objects << "object_class:#{object.class.name};"
-      counter = 1
-      serialized_variables = ""
+      # Append class name to string
+      serialized_objects << "object_class:#{object.class.name}:"
 
+      # Append each of the instance variables' name, value to string
       object.instance_variables.each do |variable|
-        serialized_variables << template % {
-          :number => counter,
+        serialized_objects << template % {
           :variable_name => variable,
-          :value => serialize_objects([object.instance_variable_get(variable)].flatten)
+          :variable_value => serialize_objects(object.instance_variable_get(variable))
         }
-
-        counter += 1
       end
 
-      serialized_objects << serialized_variables
+      serialized_objects << ";"
     end
 
     serialized_objects
@@ -50,6 +49,6 @@ class Database
   def deserialize_objects(objs)
     # each object here is turned from a string with all its
     # state into a Ruby object
-
+    
   end
 end
