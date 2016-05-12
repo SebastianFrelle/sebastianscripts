@@ -10,45 +10,40 @@ class Database
   end
 
   def load
+    @file.rewind
+    deserialize_objects(@file.read)
     return []
-    # @file.rewind
-    # deserialize_objects(@file.read)
   end
 
   private
 
-  def serialize_objects(objs)
-    # each object in here needs to be turned into a string
-    # with all its state
-    # A ruby object's only state is its instance variables.
-    # You may have to resort to meta-programming here with
-    # #instance_variable_get and #instance_variable_set
-    return objs unless objs.kind_of?(Array)
-
+  def serialize_objects(objs) # Take an array of objects
     serialized_objects = ""
-    template = "%{variable_name}, (%{variable_value}):"
+    template = "(%{object_class_name}:%{value})"
 
     objs.each do |object|
-      # Append class name to string
-      serialized_objects << "object_class:#{object.class.name}:"
-
-      # Append each of the instance variables' name, value to string
-      object.instance_variables.each do |variable|
-        serialized_objects << template % {
-          :variable_name => variable,
-          :variable_value => serialize_objects(object.instance_variable_get(variable))
-        }
+      variables = object.instance_variables.map do |variable_name|
+        object.instance_variable_get(variable_name)
+      end
+      
+      if object.kind_of?(Array)
+        value = serialize_objects(object)
+      elsif object.instance_variables.empty?
+        value = object
+      else
+        value = serialize_objects(variables)
       end
 
-      serialized_objects << ";"
+      serialized_objects << template % {
+        :object_class_name => object.class.name,
+        :value => value
+      }
     end
 
     serialized_objects
   end
 
   def deserialize_objects(objs)
-    # each object here is turned from a string with all its
-    # state into a Ruby object
-    
+
   end
 end

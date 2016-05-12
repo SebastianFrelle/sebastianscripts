@@ -106,3 +106,5 @@ kenichi = Player.new("kenichi")
 Game.create([sebastian, simon], [daniel, kenichi], 10, 0)
 Game.create([sebastian, simon], [daniel, kenichi], 10, 0)
 Game.create([sebastian, simon], [daniel, kenichi], 10, 0)
+
+Game.database.load
