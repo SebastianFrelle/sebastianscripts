@@ -21,29 +21,34 @@ class Database
     serialized_objects = ""
     template = "(%{object_class_name}:%{value})"
 
-    objs.each do |object|
-      variables = object.instance_variables.map do |variable_name|
-        object.instance_variable_get(variable_name)
-      end
-      
-      if object.kind_of?(Array)
-        value = serialize_objects(object)
-      elsif object.instance_variables.empty?
-        value = object
-      else
-        value = serialize_objects(variables)
+    if objs.kind_of?(Array)
+      serialized_objects << "[\n"
+
+      objs.each do |object|
+        serialized_objects << "#{serialize_objects(object)}"
       end
 
-      serialized_objects << template % {
-        :object_class_name => object.class.name,
-        :value => value
-      }
+      serialized_objects << "]\n"
+    elsif !objs.instance_variables.empty?
+      serialized_objects << "object: #{objs.class.name}\n"
+
+      variables = Hash.new
+
+      objs.instance_variables.each do |variable_name|
+        variables[variable_name] = objs.instance_variable_get(variable_name)
+      end
+
+      variables.each do |variable_name, value|
+        serialized_objects << "#{variable_name}: #{serialize_objects(value)}"
+      end
+    else
+      serialized_objects << "#{objs}\n"
     end
 
     serialized_objects
   end
 
   def deserialize_objects(objs)
-
+    
   end
 end

@@ -87,7 +87,7 @@ class Game
     @side1.include?(player) ? @side2 : @side1
   end
 
-  # private
+  private
 
   def self.database
     @database ||= Database.new(:games)
@@ -98,13 +98,11 @@ class Game
   end
 end
 
-sebastian = Player.new("sebastian")
-simon = Player.new("simon")
-daniel = Player.new("daniel")
-kenichi = Player.new("kenichi")
+# sebastian = Player.new("sebastian")
+# simon = Player.new("simon")
+# daniel = Player.new("daniel")
+# kenichi = Player.new("kenichi")
 
-Game.create([sebastian, simon], [daniel, kenichi], 10, 0)
-Game.create([sebastian, simon], [daniel, kenichi], 10, 0)
-Game.create([sebastian, simon], [daniel, kenichi], 10, 0)
-
-Game.database.load
+# Game.create([sebastian, simon], [daniel, kenichi], 10, 0)
+# Game.create([sebastian, simon], [daniel, kenichi], 10, 0)
+# Game.create([sebastian, simon], [daniel, kenichi], 10, 0)
