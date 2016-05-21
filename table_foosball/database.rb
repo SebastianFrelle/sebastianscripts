@@ -48,7 +48,48 @@ class Database
     serialized_objects
   end
 
-  def deserialize_objects(objs)
-    
+  def deserialize_objects(objects)
+    if objects.first.last == "["
+      deserialized_obj = []
+      i = 1
+
+      loop do
+        k = find_next_object(objects, i) || objects.count - 1
+        deserialized_obj << deserialize_objects(objects[i...k])
+        break if k == objects.count - 1
+        i = k
+      end
+    elsif objects.first.first == "object"
+      klass_name = objects.first.last
+      variables = {}
+
+      i = 1
+      
+      while i < objects.count
+        variable_name = objects[i].first.slice(/[^@].*/).to_sym
+
+        if objects[i].last == "["
+          j = find_matching_bracket(objects, i)
+          variables[variable_name] = deserialize_objects(objects[i..j])
+          i = j
+        else
+          variables[variable_name] = objects[i].last
+        end
+
+        i += 1
+      end
+
+      p variables
+
+      deserialized_obj = Kernel.const_get(klass_name).new(variables)
+    end
+
+    deserialized_obj
+  end
+
+  def read_objects(objs)
+    objects = objs.split("\n").map { |line| line.split(":", 2) }
+    objects.map { |object| object.last.strip! }
+    objects
   end
 end

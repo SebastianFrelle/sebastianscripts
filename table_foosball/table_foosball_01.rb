@@ -98,11 +98,54 @@ class Game
   end
 end
 
-# sebastian = Player.new("sebastian")
-# simon = Player.new("simon")
-# daniel = Player.new("daniel")
-# kenichi = Player.new("kenichi")
+# sebastian = Player.new({
+#   :name => "sebastian",
+#   :timestamp => Time.now,
+#   :id => SecureRandom.uuid
+#   })
 
-# Game.create([sebastian, simon], [daniel, kenichi], 10, 0)
-# Game.create([sebastian, simon], [daniel, kenichi], 10, 0)
-# Game.create([sebastian, simon], [daniel, kenichi], 10, 0)
+# simon = Player.new({
+#   :name => "simon",
+#   :timestamp => Time.now,
+#   :id => SecureRandom.uuid
+#   })
+
+# daniel = Player.new({
+#   :name => "daniel",
+#   :timestamp => Time.now,
+#   :id => SecureRandom.uuid
+#   })
+
+# kenichi = Player.new({
+#   :name => "kenichi",
+#   :timestamp => Time.now,
+#   :id => SecureRandom.uuid
+#   })
+
+p Game.all
+# Game.create({
+#   :side1 => [sebastian, simon],
+#   :side2 => [daniel, kenichi],
+#   :side1score => 10,
+#   :side2score => 2,
+#   :timestamp => Time.now,
+#   :id => SecureRandom.uuid
+#   })
+
+# Game.create({
+#   :side1 => [simon, kenichi],
+#   :side2 => [sebastian],
+#   :side1score => 10,
+#   :side2score => 2,
+#   :timestamp => Time.now,
+#   :id => SecureRandom.uuid
+#   })
+
+# Game.create({
+#   :side1 => [sebastian],
+#   :side2 => [daniel, simon],
+#   :side1score => 10,
+#   :side2score => 8,
+#   :timestamp => Time.now,
+#   :id => SecureRandom.uuid
+#   })
