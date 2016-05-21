@@ -1,7 +1,11 @@
+require_relative "./text_tools"
+
 class Database
+  include TextTools
+
   def initialize(name)
     @name = name
-    @file = File.open("./#{name}.sdb", "w+") # sebastiandb
+    @file = File.open("./#{name}.sdb", "r+")
   end
 
   def save(objs)
@@ -11,15 +15,17 @@ class Database
 
   def load
     @file.rewind
-    deserialize_objects(@file.read)
-    return []
+    serialized_objects = @file.read
+    return [] if serialized_objects == ""
+    objects = read_objects(serialized_objects)
+    deserialize_objects(objects)
   end
 
   private
 
-  def serialize_objects(objs) # Take an array of objects
+
+  def serialize_objects(objs)
     serialized_objects = ""
-    template = "(%{object_class_name}:%{value})"
 
     if objs.kind_of?(Array)
       serialized_objects << "[\n"
@@ -32,7 +38,7 @@ class Database
     elsif !objs.instance_variables.empty?
       serialized_objects << "object: #{objs.class.name}\n"
 
-      variables = Hash.new
+      variables = {}
 
       objs.instance_variables.each do |variable_name|
         variables[variable_name] = objs.instance_variable_get(variable_name)
@@ -78,8 +84,6 @@ class Database
 
         i += 1
       end
-
-      p variables
 
       deserialized_obj = Kernel.const_get(klass_name).new(variables)
     end

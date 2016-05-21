@@ -1,15 +1,11 @@
 require_relative "./database"
+require_relative "./hash_constructor"
 require "securerandom"
 
 class Player
-  def initialize name
-    @name = name
+  include HashConstructor
 
-    @timestamp = Time.now
-    @id = SecureRandom.uuid
-  end
-
-  attr_reader :name, :timestamp, :id
+  attr_accessor :name, :timestamp, :id
 
   def games
     Game.all.select { |game| game.players.include?(self) }
@@ -41,32 +37,23 @@ class Player
   def most_losses_against
     most_frequent_opponent lost_games
   end
-
 end
 
 class Game
+  include HashConstructor
+
   class << self
     def games
       @games ||= database.load
     end
+
     alias_method :all, :games
 
-    def create(side1, side2, side1score, side2score)
-      games << Game.new(side1, side2, side1score, side2score)
+    def create(h)
+      games << Game.new(h)
       persist(games)
       games.last
     end
-  end
-
-  def initialize side1, side2, side1score, side2score
-    @side1 = side1
-    @side2 = side2
-
-    @side1score = side1score
-    @side2score = side2score
-
-    @timestamp = Time.now
-    @id = SecureRandom.uuid
   end
 
   attr_accessor :side1, :side2, :side1score, :side2score, :timestamp, :id
@@ -97,55 +84,3 @@ class Game
     database.save(objects)
   end
 end
-
-# sebastian = Player.new({
-#   :name => "sebastian",
-#   :timestamp => Time.now,
-#   :id => SecureRandom.uuid
-#   })
-
-# simon = Player.new({
-#   :name => "simon",
-#   :timestamp => Time.now,
-#   :id => SecureRandom.uuid
-#   })
-
-# daniel = Player.new({
-#   :name => "daniel",
-#   :timestamp => Time.now,
-#   :id => SecureRandom.uuid
-#   })
-
-# kenichi = Player.new({
-#   :name => "kenichi",
-#   :timestamp => Time.now,
-#   :id => SecureRandom.uuid
-#   })
-
-p Game.all
-# Game.create({
-#   :side1 => [sebastian, simon],
-#   :side2 => [daniel, kenichi],
-#   :side1score => 10,
-#   :side2score => 2,
-#   :timestamp => Time.now,
-#   :id => SecureRandom.uuid
-#   })
-
-# Game.create({
-#   :side1 => [simon, kenichi],
-#   :side2 => [sebastian],
-#   :side1score => 10,
-#   :side2score => 2,
-#   :timestamp => Time.now,
-#   :id => SecureRandom.uuid
-#   })
-
-# Game.create({
-#   :side1 => [sebastian],
-#   :side2 => [daniel, simon],
-#   :side1score => 10,
-#   :side2score => 8,
-#   :timestamp => Time.now,
-#   :id => SecureRandom.uuid
-#   })
