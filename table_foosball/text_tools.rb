@@ -32,4 +32,20 @@ module TextTools
 
 		nil
 	end
+
+	def value_handler value_string
+		unless (value_string =~ /[^']*[^']/) == 0
+			value = value_string.slice(/[^']*[^']/)
+		else
+			if value_string.split(":").first == "Time"
+				require "time"
+
+				value = Time.parse(value_string.split(":", 2).last)
+			else
+				value = value_string.to_i
+			end
+		end
+
+		value
+	end
 end

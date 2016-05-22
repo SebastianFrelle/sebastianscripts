@@ -23,7 +23,6 @@ class Database
 
   private
 
-
   def serialize_objects(objs)
     serialized_objects = ""
 
@@ -48,7 +47,14 @@ class Database
         serialized_objects << "#{variable_name}: #{serialize_objects(value)}"
       end
     else
-      serialized_objects << "#{objs}\n"
+      serialized_objects << case objs.class.name
+      when "String"
+        "\'#{objs}\'\n"
+      when "Fixnum"
+        "#{objs}\n"
+      else
+        "#{objs.class.name}:#{objs}\n"
+      end
     end
 
     serialized_objects
@@ -79,7 +85,7 @@ class Database
           variables[variable_name] = deserialize_objects(objects[i..j])
           i = j
         else
-          variables[variable_name] = objects[i].last
+          variables[variable_name] = value_handler(objects[i].last)
         end
 
         i += 1

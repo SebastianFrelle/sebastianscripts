@@ -84,3 +84,19 @@ class Game
     database.save(objects)
   end
 end
+
+sebastian = Player.new({:name => "sebastian", :timestamp => Time.now, :id => SecureRandom.uuid})
+simon = Player.new({:name => "simon", :timestamp => Time.now, :id => SecureRandom.uuid})
+kenichi = Player.new({:name => "kenichi", :timestamp => Time.now, :id => SecureRandom.uuid})
+daniel = Player.new({:name => "daniel", :timestamp => Time.now, :id => SecureRandom.uuid})
+
+# Game.create({
+#   :side1 => [sebastian, simon],
+#   :side2 => [daniel, kenichi],
+#   :side1score => 10,
+#   :side2score => 2,
+#   :id => SecureRandom.uuid,
+#   :timestamp => Time.now
+#   })
+
+puts Game.all
