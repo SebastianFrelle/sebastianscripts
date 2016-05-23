@@ -34,8 +34,9 @@ module TextTools
 	end
 
 	def value_handler value_string
-		unless (value_string =~ /[^']*[^']/) == 0
-			value = value_string.slice(/[^']*[^']/)
+		regex = /[^']*[^']/
+		unless (value_string =~ regex) == 0
+			value = value_string.slice(regex)
 		else
 			if value_string.split(":").first == "Time"
 				require "time"
