@@ -1,18 +1,16 @@
 module TextTools
 	def find_matching_bracket(strings, index)
 		bracket_count = 1
-		j = index
 
-		until bracket_count == 0
-			j += 1
+		for j in index+1...strings.count
 			if strings[j].last == "["
 				bracket_count += 1
 			elsif strings[j].last == "]"
 				bracket_count -= 1
 			end
+			return j if bracket_count == 0
 		end
 
-		j
 	end
 
 	def find_next_object(strings, index)
@@ -34,9 +32,10 @@ module TextTools
 	end
 
 	def value_handler value_string
-		regex = /[^']*[^']/
-		unless (value_string =~ regex) == 0
-			value = value_string.slice(regex)
+		string_regex = /[^']*[^']/
+
+		unless (value_string =~ string_regex) == 0
+			value = value_string.slice(string_regex)
 		else
 			if value_string.split(":").first == "Time"
 				require "time"

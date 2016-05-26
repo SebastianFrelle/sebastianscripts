@@ -1,9 +1,18 @@
 require_relative "./database"
-require_relative "./hash_constructor"
 require "securerandom"
 
 class Player
-  include HashConstructor
+  def initialize(*args)
+    p args ## Delete this
+    case args.first.class.name
+    when 'Hash'
+      args[0].each { |k, v| send("#{k}=", v) }
+    else
+      @name = args.first
+      @timestamp = Time.now
+      @id = SecureRandom.uuid
+    end
+  end
 
   attr_accessor :name, :timestamp, :id
 
@@ -40,19 +49,32 @@ class Player
 end
 
 class Game
-  include HashConstructor
-
   class << self
     def games
       @games ||= database.load
     end
 
+    def games=(game_set)
+      @games = game_set
+    end
+
     alias_method :all, :games
 
-    def create(h)
-      games << Game.new(h)
+    def create(*args)
+      games << Game.new(*args)
       persist(games)
       games.last
+    end
+  end
+
+  def initialize(*args)
+    case args.first.class.name
+    when 'Hash'
+      args[0].each { |k,v| send("#{k}=", v) }
+    else
+      @side1, @side2, @side1score, @side2score = args
+      @timestamp = Time.now
+      @id = SecureRandom.uuid
     end
   end
 
@@ -84,3 +106,13 @@ class Game
     database.save(objects)
   end
 end
+
+sebastian = Player.new("Sebastian")
+simon = Player.new("Simon")
+daniel = Player.new("Daniel")
+kenichi = Player.new("Kenichi")
+
+# Game.create([sebastian, simon], [daniel, kenichi], 10, 8)
+# Game.games = []
+# Game.create([sebastian], [daniel], 10, 4)
+# Game.create([sebastian], [daniel], 10, 9)

@@ -67,11 +67,13 @@ class Database
 
       loop do
         k = find_next_object(objects, i) || objects.count - 1
+        puts "index of next object: #{k}"
         deserialized_obj << deserialize_objects(objects[i...k])
         break if k == objects.count - 1
         i = k
       end
     elsif objects.first.first == "object"
+      p objects
       klass_name = objects.first.last
       variables = {}
 
@@ -82,6 +84,8 @@ class Database
 
         if objects[i].last == "["
           j = find_matching_bracket(objects, i)
+          puts "index of i: #{i}"
+          puts "index of matching bracket: #{j}"
           variables[variable_name] = deserialize_objects(objects[i..j])
           i = j
         else
