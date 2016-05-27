@@ -45,23 +45,33 @@ class DatabaseTest < Minitest::Test
 		@gamedb.save(@games)
 		
 		refute_equal "", File.read("./games_test.sdb")
-
-		loaded_games = @gamedb.load
+		compare_object_states @games, @gamedb.load
 	end
 
-	def test_read_objects_from_string
+	def test_save_and_load_players_on_database
+		assert_equal "", File.read("./players_test.sdb")
+		assert_empty @playerdb.load
 
-	end
-
-	def test_find_matching_bracket
+		@playerdb.save(@players)
 		
+		refute_equal "", File.read("./players_test.sdb")
+		compare_object_states @players, @playerdb.load
 	end
 
-	def test_find_next_object
-		
-	end
+	private
 
-	def test_variable_value_handling
-		
+	def compare_object_states exp, act
+		exp.zip(act).each do |exp_obj, act_obj| # [[game1exp, game1act], [game2exp, game2act], ...]
+			exp_obj.instance_variables.each do |variable_name|
+				exp_value = exp_obj.instance_variable_get(variable_name)
+				act_value = act_obj.instance_variable_get(variable_name)
+
+				if exp_value.kind_of? Array || !exp_value.instance_variables.empty?
+					compare_object_states [exp_value].flatten(1), [act_value].flatten(1) # parse objects w/ instance variables as arrays
+				else
+					assert_equal exp_value.to_s, act_value.to_s
+				end				
+			end
+		end
 	end
 end
