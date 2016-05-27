@@ -66,8 +66,8 @@ class DatabaseTest < Minitest::Test
 				exp_value = exp_obj.instance_variable_get(variable_name)
 				act_value = act_obj.instance_variable_get(variable_name)
 
-				if exp_value.kind_of? Array || !exp_value.instance_variables.empty?
-					compare_object_states [exp_value].flatten(1), [act_value].flatten(1) # parse objects w/ instance variables as arrays
+				if exp_value.kind_of? Array
+					compare_object_states exp_value, act_value
 				else
 					assert_equal exp_value.to_s, act_value.to_s
 				end				
