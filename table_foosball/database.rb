@@ -5,18 +5,26 @@ class Database
 
   def initialize(name)
     @name = name
-    @file = File.open("./#{name}.sdb", "r+")
+    @filename = "./#{@name}.sdb"
   end
 
   def save(objs)
-    @file.rewind
-    @file.write(serialize_objects(objs))
+    file = File.open(@filename, "r+")    
+    file.rewind
+    
+    file.write(serialize_objects(objs))
+    
+    file.close
   end
 
   def load
-    @file.rewind
-    serialized_objects = @file.read
+    file = File.open(@filename, "r+")    
+    file.rewind
+
+    serialized_objects = file.read
+
     return [] if serialized_objects == ""
+
     objects = read_objects(serialized_objects)
     deserialize_objects(objects)
   end
@@ -67,13 +75,11 @@ class Database
 
       loop do
         k = find_next_object(objects, i) || objects.count - 1
-        puts "index of next object: #{k}"
         deserialized_obj << deserialize_objects(objects[i...k])
         break if k == objects.count - 1
         i = k
       end
     elsif objects.first.first == "object"
-      p objects
       klass_name = objects.first.last
       variables = {}
 
@@ -84,8 +90,6 @@ class Database
 
         if objects[i].last == "["
           j = find_matching_bracket(objects, i)
-          puts "index of i: #{i}"
-          puts "index of matching bracket: #{j}"
           variables[variable_name] = deserialize_objects(objects[i..j])
           i = j
         else

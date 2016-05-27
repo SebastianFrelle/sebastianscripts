@@ -3,7 +3,6 @@ require "securerandom"
 
 class Player
   def initialize(*args)
-    p args ## Delete this
     case args.first.class.name
     when 'Hash'
       args[0].each { |k, v| send("#{k}=", v) }
@@ -106,13 +105,3 @@ class Game
     database.save(objects)
   end
 end
-
-sebastian = Player.new("Sebastian")
-simon = Player.new("Simon")
-daniel = Player.new("Daniel")
-kenichi = Player.new("Kenichi")
-
-# Game.create([sebastian, simon], [daniel, kenichi], 10, 8)
-# Game.games = []
-# Game.create([sebastian], [daniel], 10, 4)
-# Game.create([sebastian], [daniel], 10, 9)
