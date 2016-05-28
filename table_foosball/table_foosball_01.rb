@@ -1,7 +1,21 @@
 require_relative "./database"
+require_relative "./persistence"
 require "securerandom"
 
 class Player
+  extend Persistence
+
+  class << self
+    alias_method :players, :objects
+    alias_method :players=, :objects=
+
+    def create(*args)
+      players << Player.new(*args)
+      persist(players)
+      players.last
+    end
+  end
+
   def initialize(*args)
     case args.first.class.name
     when 'Hash'
@@ -24,7 +38,7 @@ class Player
   end
 
   def lost_games
-    games.select {|game| game.loser.include?(self)}
+    games.select { |game| game.loser.include?(self) }
   end
 
   def games_against(opponent)
@@ -48,16 +62,13 @@ class Player
 end
 
 class Game
+  extend Persistence
+
   class << self
-    def games
-      @games ||= database.load
-    end
+    alias_method :all, :objects
+    alias_method :games=, :objects=
 
-    def games=(game_set)
-      @games = game_set
-    end
-
-    alias_method :all, :games
+    alias_method :games, :all
 
     def create(*args)
       games << Game.new(*args)
@@ -93,15 +104,5 @@ class Game
 
   def opponents player
     @side1.include?(player) ? @side2 : @side1
-  end
-
-  private
-
-  def self.database
-    @database ||= Database.new(:games)
-  end
-
-  def self.persist(objects)
-    database.save(objects)
   end
 end
