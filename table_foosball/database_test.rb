@@ -61,16 +61,18 @@ class DatabaseTest < Minitest::Test
 	private
 
 	def compare_object_states exp, act
-		exp.zip(act).each do |exp_obj, act_obj| # [[game1exp, game1act], [game2exp, game2act], ...]
+		exp.zip(act).each do |exp_obj, act_obj|
+			assert_equal exp_obj.class, act_obj.class
+
 			exp_obj.instance_variables.each do |variable_name|
 				exp_value = exp_obj.instance_variable_get(variable_name)
 				act_value = act_obj.instance_variable_get(variable_name)
 
 				if exp_value.kind_of? Array
 					compare_object_states exp_value, act_value
-				else
+				elsif exp_value.instance_variables.empty?
 					assert_equal exp_value.to_s, act_value.to_s
-				end				
+				end
 			end
 		end
 	end
