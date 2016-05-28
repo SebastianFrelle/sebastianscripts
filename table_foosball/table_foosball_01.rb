@@ -19,7 +19,7 @@ class Player
       players.each do |player|
         return player if player.name.downcase == name.downcase
       end
-    end
+    end    
   end
 
   def initialize(*args)

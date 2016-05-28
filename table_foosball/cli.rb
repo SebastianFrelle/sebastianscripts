@@ -27,9 +27,9 @@ class TableFoosballCLI < Thor
 		Game.games.each { |game| p game }
 	end
 
-	desc "delete_all_games", "delete all games from database"
+	desc "clear_games", "clear all games from database"
 	option :all, :type => :boolean
-	def delete_all_games
+	def clear_games
 		Game.clear
 	end
 
@@ -51,13 +51,10 @@ class TableFoosballCLI < Thor
 		Player.players.each { |player| p player }
 	end
 
-	# desc "delete_players", "deletes players"
-	# option :all, :type => :boolean
-	# option :names
-	# def delete_players
-	# 	if options[:all]
-	# 		Player.clear
-	# end
+	desc "clear_players", "clear all players"
+	def clear_players
+		Player.clear
+	end
 end
 
 TableFoosballCLI.start(ARGV)
