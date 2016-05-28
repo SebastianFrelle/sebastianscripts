@@ -5,7 +5,11 @@ class Database
 
   def initialize(name)
     @name = name
-    @filename = "./#{@name}.sdb"
+    @filename = "./#{name}.sdb"
+  end
+
+  def clear
+    File.truncate("./#{@name}", 0)
   end
 
   def save(objs)

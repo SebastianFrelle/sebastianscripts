@@ -16,4 +16,9 @@ module Persistence
 	def persist objects
 		@database.save(objects)
 	end
+
+	def clear
+		@database.clear
+		objects = nil
+	end
 end
