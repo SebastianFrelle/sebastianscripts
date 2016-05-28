@@ -28,7 +28,6 @@ class TableFoosballCLI < Thor
 	end
 
 	desc "clear_games", "clear all games from database"
-	option :all, :type => :boolean
 	def clear_games
 		Game.clear
 	end
