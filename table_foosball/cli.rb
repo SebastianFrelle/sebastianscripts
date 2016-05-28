@@ -4,6 +4,9 @@ require "thor"
 class TableFoosballCLI < Thor
 
 	desc "create_new_game", "creates a new game interactively"
+	long_desc <<-LONGDESC
+	`create_new_game` interactively takes the user through the process of creating a new game, asking for user input corresponding to each variable as it goes along.
+	LONGDESC
 	def create_new_game
 		side1 = ask("Players on side 1:")
 		side1 = side1.split(", ").map { |player_name| Player.by_name(player_name) }
@@ -24,6 +27,12 @@ class TableFoosballCLI < Thor
 		Game.games.each { |game| p game }
 	end
 
+	desc "delete_all_games", "delete all games from database"
+	option :all, :type => :boolean
+	def delete_all_games
+		Game.clear
+	end
+
 	desc "create_new_player PLAYER_NAME", "creates a new player named PLAYER_NAME"
 	long_desc <<-LONGDESC
 	`create_new_player` will create a new player with a name of your choosing.
@@ -42,13 +51,13 @@ class TableFoosballCLI < Thor
 		Player.players.each { |player| p player }
 	end
 
-	desc "delete_players", "deletes players"
-	# option :name
-	def delete_players
-		print "Deleting all players..."
-		Player.players = nil
-		puts "Done!"
-	end
+	# desc "delete_players", "deletes players"
+	# option :all, :type => :boolean
+	# option :names
+	# def delete_players
+	# 	if options[:all]
+	# 		Player.clear
+	# end
 end
 
 TableFoosballCLI.start(ARGV)
