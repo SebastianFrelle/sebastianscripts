@@ -14,6 +14,12 @@ class Player
       persist(players)
       players.last
     end
+
+    def by_name(name)
+      players.each do |player|
+        return player if player.name.downcase == name.downcase
+      end
+    end
   end
 
   def initialize(*args)
