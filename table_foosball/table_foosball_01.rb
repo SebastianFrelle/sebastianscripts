@@ -1,14 +1,19 @@
+require_relative "./database"
 require "securerandom"
 
 class Player
-  def initialize name
-    @name = name
-
-    @timestamp = Time.now
-    @id = SecureRandom.uuid
+  def initialize(*args)
+    case args.first.class.name
+    when 'Hash'
+      args[0].each { |k, v| send("#{k}=", v) }
+    else
+      @name = args.first
+      @timestamp = Time.now
+      @id = SecureRandom.uuid
+    end
   end
 
-  attr_reader :name, :timestamp, :id
+  attr_accessor :name, :timestamp, :id
 
   def games
     Game.all.select { |game| game.players.include?(self) }
@@ -40,33 +45,36 @@ class Player
   def most_losses_against
     most_frequent_opponent lost_games
   end
-
 end
 
 class Game
-  def self.all
-    @games || []
+  class << self
+    def games
+      @games ||= database.load
+    end
+
+    def games=(game_set)
+      @games = game_set
+    end
+
+    alias_method :all, :games
+
+    def create(*args)
+      games << Game.new(*args)
+      persist(games)
+      games.last
+    end
   end
 
-  def self.games=(game_set)
-    @games = game_set
-  end
-
-  def self.create(side1, side2, side1score, side2score)
-    @games ||= []
-    @games << Game.new(side1, side2, side1score, side2score)
-    @games.last
-  end
-
-  def initialize side1, side2, side1score, side2score
-    @side1 = side1
-    @side2 = side2
-
-    @side1score = side1score
-    @side2score = side2score
-
-    @timestamp = Time.now
-    @id = SecureRandom.uuid
+  def initialize(*args)
+    case args.first.class.name
+    when 'Hash'
+      args[0].each { |k,v| send("#{k}=", v) }
+    else
+      @side1, @side2, @side1score, @side2score = args
+      @timestamp = Time.now
+      @id = SecureRandom.uuid
+    end
   end
 
   attr_accessor :side1, :side2, :side1score, :side2score, :timestamp, :id
@@ -85,5 +93,15 @@ class Game
 
   def opponents player
     @side1.include?(player) ? @side2 : @side1
+  end
+
+  private
+
+  def self.database
+    @database ||= Database.new(:games)
+  end
+
+  def self.persist(objects)
+    database.save(objects)
   end
 end
