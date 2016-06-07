@@ -57,7 +57,6 @@ class DatabaseTest < Minitest::Test
     @foodb.save(@foos)
 
     refute_equal "", File.read("./foo_test.sdb")
-    p @foodb.load
     compare_object_states @foos, @foodb.load
   end
 
