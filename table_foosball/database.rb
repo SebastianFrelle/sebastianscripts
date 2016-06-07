@@ -1,35 +1,31 @@
-require_relative "./text_tools"
-
 class Database
-  include TextTools
-
   def initialize(name)
     @name = name
     @filename = "./#{name}.sdb"
   end
 
   def clear
-    File.truncate("./#{@name}", 0)
+    File.truncate("./#{@filename}", 0)
   end
 
   def save(objs)
-    file = File.open(@filename, "r+")    
-    file.rewind
-    
+    file = File.open(@filename, "w")
+
     file.write(serialize_objects(objs))
     
     file.close
   end
 
   def load
-    file = File.open(@filename, "r+")    
+    file = File.open(@filename, "r")
     file.rewind
 
     serialized_objects = file.read
 
-    return [] if serialized_objects == ""
+    return nil if serialized_objects == ""
 
     objects = read_objects(serialized_objects)
+
     deserialize_objects(objects)
   end
 
@@ -47,7 +43,7 @@ class Database
 
       serialized_objects << "]\n"
     elsif !objs.instance_variables.empty?
-      serialized_objects << "object: #{objs.class.name}\n"
+      serialized_objects << "object:#{objs.class.name}\n"
 
       variables = {}
 
@@ -56,7 +52,7 @@ class Database
       end
 
       variables.each do |variable_name, value|
-        serialized_objects << "#{variable_name}: #{serialize_objects(value)}"
+        serialized_objects << "#{variable_name}:#{serialize_objects(value)}"
       end
     else
       serialized_objects << case objs.class.name
@@ -64,6 +60,8 @@ class Database
         "\'#{objs}\'\n"
       when "Fixnum"
         "#{objs}\n"
+      when "Time"
+        "Time:#{objs.to_i}\n"
       else
         "#{objs.class.name}:#{objs}\n"
       end
@@ -76,19 +74,26 @@ class Database
     if objects.first.last == "["
       deserialized_obj = []
       i = 1
-
+      
       loop do
-        k = find_next_object(objects, i) || objects.count - 1
+        if objects[i].first == "["
+          k = find_matching_bracket(objects, i) + 1
+        else
+          k = find_next_object(objects, i) || objects.count - 1
+        end
         deserialized_obj << deserialize_objects(objects[i...k])
+
         break if k == objects.count - 1
         i = k
       end
     elsif objects.first.first == "object"
       klass_name = objects.first.last
+      object_klass = Kernel.const_get(klass_name)
+      deserialized_obj = object_klass.allocate
+      
       variables = {}
 
       i = 1
-      
       while i < objects.count
         variable_name = objects[i].first.slice(/[^@].*/).to_sym
 
@@ -103,15 +108,73 @@ class Database
         i += 1
       end
 
-      deserialized_obj = Kernel.const_get(klass_name).new(variables)
+      variables.each do |name, value|
+        deserialized_obj.instance_variable_set("@#{name}", value)
+      end
+
+    else
+      deserialized_obj = value_handler(objects)
     end
 
     deserialized_obj
   end
 
-  def read_objects(objs)
-    objects = objs.split("\n").map { |line| line.split(":", 2) }
-    objects.map { |object| object.last.strip! }
+  def read_objects(input_lines)
+    objects = input_lines.split("\n").map do |line|
+      line.split(":", 2)
+    end
     objects
+  end
+
+  def find_matching_bracket(strings, index)
+    bracket_count = 1
+
+    for j in index+1...strings.count
+      if strings[j].last == "["
+        bracket_count += 1
+      elsif strings[j].last == "]"
+        bracket_count -= 1
+      end
+      return j if bracket_count == 0
+    end
+
+    j
+  end
+
+  def find_next_object(strings, index)
+    bracket_count = 1
+
+    for i in index+1...strings.count
+      return i if bracket_count == 1 && strings[i].first[0] != '@'
+
+      if strings[i].last == "["
+        bracket_count += 1
+      elsif strings[i].last == "]"
+        bracket_count -= 1
+      end
+    end
+    nil
+  end
+
+  def value_handler value_string
+    if value_string.kind_of? String
+      value_string = value_string.split(":", 2)
+    end
+
+    value_string.flatten!
+
+    string_regex = /[^']*[^']/
+
+    unless (value_string.last =~ string_regex) == 0
+      value = value_string.last.slice(string_regex)
+    else
+      if value_string.first == "Time"
+        value = Time.at(value_string.last.to_i)
+      else
+        value = value_string.last.to_i
+      end
+    end
+
+    value
   end
 end

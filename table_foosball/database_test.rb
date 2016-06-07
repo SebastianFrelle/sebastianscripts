@@ -1,79 +1,93 @@
 require_relative './database'
-require_relative './table_foosball_01'
 require 'minitest/autorun'
 
 class DatabaseTest < Minitest::Test
-	def setup
-		File.open("./games_test.sdb", "w") {}
-		File.open("./players_test.sdb", "w") {}
+  class Foo
+    def initialize(*args)
+      i = 0
+      args.each { |param| instance_variable_set("@var#{i+=1}", param) }
+      @timestamp = Time.now
+    end
+  end
 
-		@gamedb = Database.new(:games_test)
-		@playerdb = Database.new(:players_test)
+  class Bar
+    def initialize(*args)
+      i = 0
+      args.each { |param| instance_variable_set("@var#{i+=1}", param) }
+      @timestamp = Time.now
+    end
+  end
 
-		@sebastian = Player.new("Sebastian")
-		@simon = Player.new("Simon")
-		@daniel = Player.new("Daniel")
-		@kenichi = Player.new("Kenichi")
+  def setup
+    File.open("./foo_test.sdb", "w") {}
+    File.open("./bar_test.sdb", "w") {}
 
-		@game1 = Game.new([@sebastian, @simon, @daniel], [@kenichi], 10, 0)
-		@game2 = Game.new([@simon], [@daniel], 6, 10)
-		@game3 = Game.new([@sebastian, @simon], [@daniel, @kenichi], 10, 5)
-		@game4 = Game.new([@sebastian], [@daniel, @kenichi], 10, 9)
+    @foodb = Database.new(:foo_test)
+    @bardb = Database.new(:bar_test)
 
-		@players = [@sebastian, @simon, @daniel, @kenichi]
-		@games = [@game1, @game2, @game3, @game4]
-	end
+    @bar1 = Bar.new("name1")
+    @bar2 = Bar.new("name2")
+    @bar3 = Bar.new("name3")
+    @bar4 = Bar.new("name4")
 
-	def teardown
-		Game.games = nil
-		File.delete("./games_test.sdb", "./players_test.sdb")
-	end
+    @foo1 = Foo.new([@bar1, @bar2, @bar3], [@bar4], 10, 0)
+    @foo2 = Foo.new([@bar2], [@bar3], 6, 10)
+    @foo3 = Foo.new([@bar1, @bar2], [@bar3, @bar4], 10, 5)
+    @foo4 = Foo.new([@bar1], [@bar3, @bar4], 10, 9)
 
-	def test_create_new_database
-		name = :test_database
-		test_database = Database.new(name)
-		
-		assert_equal Database, test_database.class
-		assert_equal name, test_database.instance_eval { @name }
-		assert_equal "./#{name}.sdb", test_database.instance_eval { @filename }
-	end
+    @bars = [@bar1, @bar2, @bar3, @bar4]
+    @foos = [@foo1, @foo2, @foo3, @foo4]
+  end
 
-	def test_save_and_load_games_on_database
-		assert_equal "", File.read("./games_test.sdb")
-		assert_empty @gamedb.load
+  def teardown
+    File.delete("./foo_test.sdb", "./bar_test.sdb")
+  end
 
-		@gamedb.save(@games)
-		
-		refute_equal "", File.read("./games_test.sdb")
-		compare_object_states @games, @gamedb.load
-	end
+  def test_create_new_database
+    name = :test_database
+    test_database = Database.new(name)
 
-	def test_save_and_load_players_on_database
-		assert_equal "", File.read("./players_test.sdb")
-		assert_empty @playerdb.load
+    assert_equal Database, test_database.class
+  end
 
-		@playerdb.save(@players)
-		
-		refute_equal "", File.read("./players_test.sdb")
-		compare_object_states @players, @playerdb.load
-	end
+  def test_save_and_load_foos_on_database
+    assert_equal "", File.read("./foo_test.sdb")
+    assert_nil @foodb.load
 
-	private
+    @foodb.save(@foos)
 
-	def compare_object_states exp, act
-		exp.zip(act).each do |exp_obj, act_obj|
-			assert_equal exp_obj.class, act_obj.class
+    refute_equal "", File.read("./foo_test.sdb")
+    p @foodb.load
+    compare_object_states @foos, @foodb.load
+  end
 
-			exp_obj.instance_variables.each do |variable_name|
-				exp_value = exp_obj.instance_variable_get(variable_name)
-				act_value = act_obj.instance_variable_get(variable_name)
+  def test_save_and_load_bars_on_database
+    assert_equal "", File.read("./bar_test.sdb")
+    assert_nil @bardb.load
 
-				if exp_value.kind_of? Array
-					compare_object_states exp_value, act_value
-				elsif exp_value.instance_variables.empty?
-					assert_equal exp_value.to_s, act_value.to_s
-				end
-			end
-		end
-	end
+    @bardb.save(@bars)
+
+    refute_equal "", File.read("./bar_test.sdb")
+    
+    compare_object_states @bars, @bardb.load
+  end
+
+  private
+
+  def compare_object_states exp, act
+    exp.zip(act).each do |exp_obj, act_obj|
+      assert_equal exp_obj.class, act_obj.class
+
+      exp_obj.instance_variables.each do |variable_name|
+        exp_value = exp_obj.instance_variable_get(variable_name)
+        act_value = act_obj.instance_variable_get(variable_name)
+
+        if exp_value.kind_of? Array
+          compare_object_states exp_value, act_value
+        elsif exp_value.instance_variables.empty?
+          assert_equal exp_value.to_s, act_value.to_s
+        end
+      end
+    end
+  end
 end
