@@ -35,7 +35,7 @@ class Database
     serialized_objects = ""
 
     if objs.kind_of?(Array)
-      serialized_objects << "[\n"
+      serialized_objects << "["
 
       objs.each do |object|
         serialized_objects << "#{serialize_objects(object)}"
@@ -43,7 +43,7 @@ class Database
 
       serialized_objects << "]\n"
     elsif !objs.instance_variables.empty?
-      serialized_objects << "object:#{objs.class.name}\n"
+      serialized_objects << "\nobject:#{objs.class.name}\n{\n"
 
       variables = {}
 
@@ -54,6 +54,8 @@ class Database
       variables.each do |variable_name, value|
         serialized_objects << "#{variable_name}:#{serialize_objects(value)}"
       end
+
+      serialized_objects << "}\n"
     else
       serialized_objects << case objs.class.name
       when "String"
@@ -73,8 +75,8 @@ class Database
   def deserialize_objects(objects)
     if objects.first.last == "["
       deserialized_obj = []
-      i = 1
       
+      i = 1
       loop do
         if objects[i].first == "["
           k = find_matching_bracket(objects, i) + 1
@@ -86,7 +88,7 @@ class Database
         break if k == objects.count - 1
         i = k
       end
-    elsif objects.first.first == "object"
+    elsif objects.first.last.split(":").first == "object"
       klass_name = objects.first.last
       object_klass = Kernel.const_get(klass_name)
       deserialized_obj = object_klass.allocate
@@ -123,6 +125,7 @@ class Database
     objects = input_lines.split("\n").map do |line|
       line.split(":", 2)
     end
+
     objects
   end
 
@@ -154,6 +157,21 @@ class Database
       end
     end
     nil
+  end
+
+  def find_matching_brace(strings, index)
+    bracket_count = 1
+
+    for j in index+1...strings.count
+      if strings[j].last == "{"
+        bracket_count += 1
+      elsif strings[j].last == "}"
+        bracket_count -= 1
+      end
+      return j if bracket_count == 0
+    end
+
+    j
   end
 
   def value_handler value_string

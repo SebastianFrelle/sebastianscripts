@@ -1,12 +1,12 @@
-require_relative './database'
+require_relative './database2'
 require 'minitest/autorun'
 
-class DatabaseTest < Minitest::Test
+class Database2Test < Minitest::Test
   class Foo
     def initialize(*args)
       i = 0
       args.each { |param| instance_variable_set("@var#{i+=1}", param) }
-      @timestamp = Time.now
+      # @timestamp = Time.now
     end
 
     def ==(other)
@@ -40,7 +40,6 @@ class DatabaseTest < Minitest::Test
   end
 
   def teardown
-    File.open("foo_out.txt", "w") { |f| f.write(File.read("foo_test.sdb")) }
     File.delete("./foo_test.sdb", "./bar_test.sdb")
   end
 
@@ -51,27 +50,48 @@ class DatabaseTest < Minitest::Test
     assert_equal Database, test_database.class
   end
 
-  def test_save_and_load_foos_on_database
+  def test_save_string
     assert_equal "", File.read("./foo_test.sdb")
-    assert_nil @foodb.load
 
+    @foodb.save("sebastian")
+
+    assert_equal "String:sebastian", File.read("./foo_test.sdb")
+  end
+
+  def test_save_array
+    @foodb.save(["sebastian"])
+
+    assert_equal "---\n-\nString:sebastian", File.read("./foo_test.sdb")
+  end
+
+  def test_save_hash
+    hash = {}
+    
+    hash[:key1] = "hej"
+    hash[:key2] = "din"
+    hash[:key3] = "skank"
+
+    @foodb.save(hash)
+
+    assert_equal File.read('hash_exp.txt'), File.read('foo_test.sdb')
+  end
+
+  def test_save_object_with_instance_variables
+    @bardb.save(@bar1)
+
+    assert_equal File.read("bar_exp.txt"), File.read("./bar_test.sdb")
+  end
+
+  def test_save_array_of_objects
+    bars = [@bar1, @bar2]
+    @bardb.save(bars)
+
+    assert_equal File.read("array_of_objs_exp.txt"), File.read("bar_test.sdb")
+  end
+
+  def test_save_foo_with_bars_as_instance_variables
     @foodb.save(@foos)
-
-    refute_equal "", File.read("./foo_test.sdb")
-    
-    @foos.zip(@foodb.load).each do |exp_foo, act_foo|
-      assert_true exp_foo == act_foo
-    end
+    assert_equal File.read('foo_exp.txt'), File.read('foo_test.sdb')
   end
-
-  def test_save_and_load_bars_on_database
-    assert_equal "", File.read("./bar_test.sdb")
-    assert_nil @bardb.load
-
-    @bardb.save(@bars)
-
-    refute_equal "", File.read("./bar_test.sdb")
-    
-    assert @bars == @bardb.load
-  end
+  
 end
