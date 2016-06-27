@@ -31,45 +31,84 @@ class Database
 
   private
 
-  def serialize_objects(objs)
-    serialized_objects = ""
+  # def serialize_objects(objs)
+  #   serialized_objects = ""
 
-    if objs.kind_of?(Array)
-      serialized_objects << "["
+  #   if objs.kind_of?(Array)
+  #     serialized_objects << "["
+
+  #     objs.each do |object|
+  #       serialized_objects << "#{serialize_objects(object)}"
+  #     end
+
+  #     serialized_objects << "]\n"
+  #   elsif !objs.instance_variables.empty?
+  #     serialized_objects << "\nobject:#{objs.class.name}\n{\n"
+
+  #     variables = {}
+
+  #     objs.instance_variables.each do |variable_name|
+  #       variables[variable_name] = objs.instance_variable_get(variable_name)
+  #     end
+
+  #     variables.each do |variable_name, value|
+  #       serialized_objects << "#{variable_name}:#{serialize_objects(value)}"
+  #     end
+
+  #     serialized_objects << "}\n"
+  #   else
+  #     serialized_objects << case objs.class.name
+  #     when "String"
+  #       "\'#{objs}\'\n"
+  #     when "Fixnum"
+  #       "#{objs}\n"
+  #     when "Time"
+  #       "Time:#{objs.to_i}\n"
+  #     else
+  #       "#{objs.class.name}:#{objs}\n"
+  #     end
+  #   end
+
+  #   serialized_objects
+  # end
+
+  def serialize_objects(objs)
+    serialized_objs = ""
+
+    case objs.class.name
+    when "Array"
+      serialized_objs << "[\n"
 
       objs.each do |object|
-        serialized_objects << "#{serialize_objects(object)}"
+        serialized_objs << "#{serialize_objects(object)}"
       end
 
-      serialized_objects << "]\n"
-    elsif !objs.instance_variables.empty?
-      serialized_objects << "\nobject:#{objs.class.name}\n{\n"
-
-      variables = {}
-
-      objs.instance_variables.each do |variable_name|
-        variables[variable_name] = objs.instance_variable_get(variable_name)
+      serialized_objs << "]\n"
+    when "Hash"
+      serialized_objs << "{\n"
+      
+      objs.each do |key, value|
+        serialized_objs << "#{serialize_objects(key).chomp};#{serialize_objects(value).chomp}\n"
       end
 
-      variables.each do |variable_name, value|
-        serialized_objects << "#{variable_name}:#{serialize_objects(value)}"
-      end
+      serialized_objs << "}\n"
 
-      serialized_objects << "}\n"
     else
-      serialized_objects << case objs.class.name
-      when "String"
-        "\'#{objs}\'\n"
-      when "Fixnum"
-        "#{objs}\n"
-      when "Time"
-        "Time:#{objs.to_i}\n"
+      
+      if !objs.instance_variables.empty?
+        serialized_objs << "object:#{objs.class}"
+        variables = {}
+        objs.instance_variables.each do |variable_name|
+          variables[variable_name] = objs.instance_variable_get(variable_name)
+        end
+
+        serialized_objs << "\n#{serialize_objects(variables)}"
       else
-        "#{objs.class.name}:#{objs}\n"
+        serialized_objs << "#{objs.class}=#{objs}"
       end
     end
 
-    serialized_objects
+    serialized_objs
   end
 
   def deserialize_objects(objects)

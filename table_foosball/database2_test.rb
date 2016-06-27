@@ -70,6 +70,9 @@ class Database2Test < Minitest::Test
     hash[:key1] = "hej"
     hash[:key2] = "din"
     hash[:key3] = "skank"
+    hash[:key4] = { :foz => :baz }
+    hash[:key5] = { :foz => :baz }
+    hash[:key6] = ["hallo", "du", "dér"]
 
     @foodb.save(hash)
 
@@ -82,6 +85,13 @@ class Database2Test < Minitest::Test
     assert_equal File.read("bar_exp.txt"), File.read("./bar_test.sdb")
   end
 
+  def test_save_array_of_simple_objects
+    objs = ["hey", "ho", ["let's", "go"], "hej"]
+    @foodb.save(objs)
+    
+    assert_equal "[\nString=hej\nString=ho\n]\n", File.read("foo_test.sdb")
+  end
+
   def test_save_array_of_objects
     bars = [@bar1, @bar2]
     @bardb.save(bars)
@@ -91,7 +101,9 @@ class Database2Test < Minitest::Test
 
   def test_save_foo_with_bars_as_instance_variables
     @foodb.save(@foos)
+
+    File.open("test.txt", "w") { |f| f.write(File.read("./foo_test.sdb")) }
     assert_equal File.read('foo_exp.txt'), File.read('foo_test.sdb')
   end
-  
+
 end
