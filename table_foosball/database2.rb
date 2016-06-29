@@ -39,7 +39,7 @@ class Database
       serialized_objs << "{\n"
       
       objs.each do |key, value|
-        serialized_objs << "--\nkey;#{serialize_objects(key).chomp}=value;#{serialize_objects(value).chomp}\n"
+        serialized_objs << "--\n#{serialize_objects(key).chomp}=#{serialize_objects(value).chomp}\n"
       end
       
       serialized_objs << "}"
@@ -70,8 +70,7 @@ class Database
   end
 
   def deserialize_objects(objs)
-    # if ['[', '{'].include? objs.first # eventuelt. Bare for mindre redundancy.
-    if objs.first == '['
+    if objs.first[-1] == '[' # initialize new array if last char in the first string is a bracket
       deserialized_objs = []
 
       i = 1
@@ -82,27 +81,15 @@ class Database
         break if j >= objs.length
         i = j
       end
-    elsif objs.first == "{"
+    elsif objs.first[-1] == "{"
       deserialized_objs = {}
 
       i = 1
       while true
-        # Hvordan serialiserer vi key/value pairs her?
-        j = next_element_index(objs, '{', i) || objs.length
-        # deserialized_objs << deserialize_objects(objs[i+1...j])
-        # deserialized_objs[<deserialized_key>] = <deserialized_value>
-        # Parse arrayet til en metode, der deserializer hele det pair
-        # Det fungerer kun, hvis vi så returnerer parret som en hash 
-        #   { :key => blah, :value => blah}
-        # eller som en array
-        #   [key, value]
-        # Hvorfor har vi brug for det?
-        # Fordi vi allerede har den del af teksten, der beskriver det par.
-        # Det er én eller flere linjer, men under alle omstændigheder har
-        # vi allerede fundet blokken. Det er det, der gør det til den letteste løsning.
+        j = next_element_index(objs, '{', i) || objs.length        
+        key, value = objs[i+1...j].join("\n").split('=')
 
-        # key, value = objs.split('=').map { |object| object.split(';', 2)[1] }
-        # deserialized_objs = deserialize_objects([key, value])
+        deserialized_objs[deserialize_objects(key.split("\n"))] = deserialize_objects(value.split("\n"))
 
         break if j >= objs.length
         i = j
@@ -111,31 +98,25 @@ class Database
       object_data = objs.first.split(";")
       klass_name = object_data[1]
 
-      if object_data.length == 2
+      if object_data.length == 2 # Hvis objektet ikke har en value, der kan parses, men har instansvariable
         deserialized_objs = klass_name.allocate
-
-        # Instansvariable her. Identificér den blok, der indeholder instansvariable
-        # Den løber fra { på næste linje til } på en anden linje. Pointen er, at
-        # blokken skal deserialiseres som en hash, vis værdier så gemmes i objektet som instansvariable
+        
+        variables = deserialize_objects(objs[1..-1])
+        
+        variables.each do |key, value|
+          deserialized_objs.instance_variable_set(key, value) 
+        end
       else
-        # Idé: Opret det simple objekt her ved at parse værdien ved noget med #eval
+        # Idé: Opret det simple objekt her ved at parse klassenavnet og værdien ved noget med #eval
+        # Det kan i de fleste tilfælde ikke gøres med #new, hvilket er fucking cancer.
+        # Time kræver desuden stadig særlig handling
+
+        
+
       end
     end
     
     deserialized_objs
-  end
-
-  def deserialize_key_value_pair(objs)
-    pair = {}
-    
-  end
-
-  def deserialize_key_value_pair(objs)
-    hash = {}
-    # Den 2. parameter på #split er ikke nødvendig, hvis vi bruger en anden
-    # delim end ';' til at adskille keyword og værdi
-    key, value = objs.split('=').map { |object| object.split(';', 2)[1] }
-    hash[deserialize_objects(key)] = deserialize_objects(value)
   end
 
   def matching_delimiter(objs, opening_delim, pos)
@@ -145,13 +126,13 @@ class Database
     when '['
       ']'
     else
-      raise ArgumentError, 'Invalid delimiter'
+      raise 'Invalid delimiter'
     end
 
     level = 1
 
     objs[pos+1..-1].each_with_index do |index, object|
-      if object == closing_delim
+      if object[0] == closing_delim
         level -= 1
         return index if level == 0
       elsif object[-1] == opening_delim
@@ -167,7 +148,7 @@ class Database
     when '['
       [']', '-']
     else
-      raise ArgumentError, 'Invalid delimiter'
+      raise 'Invalid delimiter'
     end
 
     level = 1
@@ -175,7 +156,7 @@ class Database
     objs[pos+1..-1].each_with_index do |index, object|
       return index if level == 1 && object == char
 
-      if object == closing_delim
+      if object[0] == closing_delim
         level -= 1
       elsif object[-1] == opening_delim
         level += 1
