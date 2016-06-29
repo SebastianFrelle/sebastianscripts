@@ -32,19 +32,19 @@ class Database
     when "Array"
       serialized_objs << "[\n"
       objs.each do |object|
-        serialized_objs << "#{serialize_objects(object)}\n"
+        serialized_objs << "-\n#{serialize_objects(object)}\n"
       end
       serialized_objs << "]"
     when "Hash"
       serialized_objs << "{\n"
       
       objs.each do |key, value|
-        serialized_objs << "#{serialize_objects(key).chomp};#{serialize_objects(value).chomp}\n"
+        serialized_objs << "--\nkey;#{serialize_objects(key).chomp}=value;#{serialize_objects(value).chomp}\n"
       end
       
       serialized_objs << "}"
     else
-      serialized_objs << "object:#{objs.class}"
+      serialized_objs << "object;#{objs.class}"
 
       if !objs.instance_variables.empty?
         variables = {}
@@ -54,7 +54,7 @@ class Database
 
         serialized_objs << "\n#{serialize_objects(variables)}"
       else
-        serialized_objs << "=#{simple_object_serializer(objs)}"
+        serialized_objs << ";#{value_handler(objs)}"
       end
     end
 
@@ -69,38 +69,118 @@ class Database
     end
   end
 
-  def deserialize_objects(serialized_objs)
-    # CASES
-    # '---'
-    #   - Initialize a new array
-    #   - Keep pushing new elements to the array until a new array is initialized
-    #   - How do we account for nested arrays? 
-    #     By serializing the inner array as an element in the outer array
-    # '----'
-    #   - Initialize a new hash
-    #   - Keep assigning new key/value pairs for as long as there's --
-    # '<klass_name>:<value>'
-    #   - Initialize object based on class name
+  def deserialize_objects(objs)
+    # if ['[', '{'].include? objs.first # eventuelt. Bare for mindre redundancy.
+    if objs.first == '['
+      deserialized_objs = []
 
-    # i = 0
-    # while i < serialized_objects.count
-    #   case serialized_objects[i]
-    #   when "-"
-    #     # initialize element
+      i = 1
+      while true
+        j = next_element_index(objs, '[', i) || objs.length
+        deserialized_objs << deserialize_objects(objs[i+1...j])
 
-    #   when "---"
-    #     objs = []
-    #     # push elements to objs array
+        break if j >= objs.length
+        i = j
+      end
+    elsif objs.first == "{"
+      deserialized_objs = {}
 
-    #   when "----"
-    #     objs = {}
-    #     # push following key/value pairs to hash
-    #   else
-    #     # make babies
-    #   end
-    # end
+      i = 1
+      while true
+        # Hvordan serialiserer vi key/value pairs her?
+        j = next_element_index(objs, '{', i) || objs.length
+        # deserialized_objs << deserialize_objects(objs[i+1...j])
+        # deserialized_objs[<deserialized_key>] = <deserialized_value>
+        # Parse arrayet til en metode, der deserializer hele det pair
+        # Det fungerer kun, hvis vi så returnerer parret som en hash 
+        #   { :key => blah, :value => blah}
+        # eller som en array
+        #   [key, value]
+        # Hvorfor har vi brug for det?
+        # Fordi vi allerede har den del af teksten, der beskriver det par.
+        # Det er én eller flere linjer, men under alle omstændigheder har
+        # vi allerede fundet blokken. Det er det, der gør det til den letteste løsning.
 
+        # key, value = objs.split('=').map { |object| object.split(';', 2)[1] }
+        # deserialized_objs = deserialize_objects([key, value])
+
+        break if j >= objs.length
+        i = j
+      end
+    elsif /^object/ =~ objs.first
+      object_data = objs.first.split(";")
+      klass_name = object_data[1]
+
+      if object_data.length == 2
+        deserialized_objs = klass_name.allocate
+
+        # Instansvariable her. Identificér den blok, der indeholder instansvariable
+        # Den løber fra { på næste linje til } på en anden linje. Pointen er, at
+        # blokken skal deserialiseres som en hash, vis værdier så gemmes i objektet som instansvariable
+      else
+        # Idé: Opret det simple objekt her ved at parse værdien ved noget med #eval
+      end
+    end
     
-
+    deserialized_objs
   end
+
+  def deserialize_key_value_pair(objs)
+    pair = {}
+    
+  end
+
+  def deserialize_key_value_pair(objs)
+    hash = {}
+    # Den 2. parameter på #split er ikke nødvendig, hvis vi bruger en anden
+    # delim end ';' til at adskille keyword og værdi
+    key, value = objs.split('=').map { |object| object.split(';', 2)[1] }
+    hash[deserialize_objects(key)] = deserialize_objects(value)
+  end
+
+  def matching_delimiter(objs, opening_delim, pos)
+    closing_delim = case opening_delim
+    when '{'
+      '}'
+    when '['
+      ']'
+    else
+      raise ArgumentError, 'Invalid delimiter'
+    end
+
+    level = 1
+
+    objs[pos+1..-1].each_with_index do |index, object|
+      if object == closing_delim
+        level -= 1
+        return index if level == 0
+      elsif object[-1] == opening_delim
+        level += 1
+      end
+    end
+  end
+
+  def next_element_index(objs, opening_delim, pos)
+    closing_delim, char = case opening_delim
+    when '{'
+      ['}', '--']
+    when '['
+      [']', '-']
+    else
+      raise ArgumentError, 'Invalid delimiter'
+    end
+
+    level = 1
+
+    objs[pos+1..-1].each_with_index do |index, object|
+      return index if level == 1 && object == char
+
+      if object == closing_delim
+        level -= 1
+      elsif object[-1] == opening_delim
+        level += 1
+      end
+    end
+  end
+
 end

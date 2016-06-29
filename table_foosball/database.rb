@@ -97,6 +97,7 @@ class Database
       
       if !objs.instance_variables.empty?
         serialized_objs << "object:#{objs.class}"
+
         variables = {}
         objs.instance_variables.each do |variable_name|
           variables[variable_name] = objs.instance_variable_get(variable_name)
