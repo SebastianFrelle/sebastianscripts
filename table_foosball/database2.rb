@@ -1,4 +1,5 @@
 class Database
+
   def initialize(name)
     @name = name
     @filename = "./#{name}.sdb"
@@ -70,24 +71,33 @@ class Database
   end
 
   def deserialize_objects(objs)
-    if objs.first[-1] == '[' # initialize new array if last char in the first string is a bracket
+    if objs.first[-1] == '['
       deserialized_objs = []
 
       i = 1
       while true
+        break if objs[i] == ']'
         j = next_element_index(objs, '[', i) || objs.length
         deserialized_objs << deserialize_objects(objs[i+1...j])
 
         break if j >= objs.length
         i = j
       end
-    elsif objs.first[-1] == "{"
+    elsif objs.first[-1] == '{'
       deserialized_objs = {}
 
       i = 1
       while true
-        j = next_element_index(objs, '{', i) || objs.length        
+        break if objs[i] == '}'
+        j = next_element_index(objs, '{', i) || objs.length
+        p j
         key, value = objs[i+1...j].join("\n").split('=')
+
+        ### for testing
+        file = File.open('test.txt', 'a')
+        file.write("#{key}: #{value}\n")
+        file.close
+        ###
 
         deserialized_objs[deserialize_objects(key.split("\n"))] = deserialize_objects(value.split("\n"))
 
@@ -95,24 +105,30 @@ class Database
         i = j
       end
     elsif /^object/ =~ objs.first
-      object_data = objs.first.split(";")
+      object_data = objs.first.split(";", 3) # Parameter for at accounte for tomme strings
       klass_name = object_data[1]
 
       if object_data.length == 2 # Hvis objektet ikke har en value, der kan parses, men har instansvariable
-        deserialized_objs = klass_name.allocate
+        deserialized_objs = Kernel.const_get(klass_name).allocate
         
         variables = deserialize_objects(objs[1..-1])
         
-        variables.each do |key, value|
-          deserialized_objs.instance_variable_set(key, value) 
+        variables.each do |variable_name, variable_value|
+          deserialized_objs.instance_variable_set(variable_name, variable_value)
         end
       else
-        # Idé: Opret det simple objekt her ved at parse klassenavnet og værdien ved noget med #eval
-        # Det kan i de fleste tilfælde ikke gøres med #new, hvilket er fucking cancer.
-        # Time kræver desuden stadig særlig handling
-
-        
-
+        deserialized_objs = case klass_name
+        when "Fixnum"
+          object_data[2].to_i
+        when "Time"
+          Time.at(object_data[2].to_i)
+        when "Symbol"
+          object_data[2].to_sym
+        when "String"
+          object_data[2]
+        else
+          raise 'Class unknown/not supported by database'
+        end
       end
     end
     
@@ -131,7 +147,7 @@ class Database
 
     level = 1
 
-    objs[pos+1..-1].each_with_index do |index, object|
+    objs[pos+1..-1].each_with_index do |object, index|
       if object[0] == closing_delim
         level -= 1
         return index if level == 0
@@ -153,15 +169,16 @@ class Database
 
     level = 1
 
-    objs[pos+1..-1].each_with_index do |index, object|
-      return index if level == 1 && object == char
+    objs[pos+1..-1].each_with_index do |object, index|
+      return index + pos + 1 if level == 1 && object == char
 
-      if object[0] == closing_delim
+      if object == closing_delim
         level -= 1
       elsif object[-1] == opening_delim
         level += 1
       end
     end
+    nil
   end
 
 end
