@@ -40,7 +40,7 @@ class Database
       serialized_objs << "{\n"
       
       objs.each do |key, value|
-        serialized_objs << "--\n#{serialize_objects(key).chomp}=#{serialize_objects(value).chomp}\n"
+        serialized_objs << "--\n(\n---\n#{serialize_objects(key).chomp}\n---\n#{serialize_objects(value).chomp}\n)\n"
       end
       
       serialized_objs << "}"
@@ -89,21 +89,18 @@ class Database
       i = 1
       while true
         break if objs[i] == '}'
-        j = next_element_index(objs, '{', i) || objs.length
-        p j
-        key, value = objs[i+1...j].join("\n").split('=')
 
-        ### for testing
-        file = File.open('test.txt', 'a')
-        file.write("#{key}: #{value}\n")
-        file.close
-        ###
-
-        deserialized_objs[deserialize_objects(key.split("\n"))] = deserialize_objects(value.split("\n"))
-
-        break if j >= objs.length
+        j = next_element_index(objs, '{', i) || objs.length - 1
+        
+        key, value = deserialize_objects(objs[i+1...j])
+        
+        deserialized_objs[key] = value
+        
+        break if j >= objs.length - 1
         i = j
       end
+    elsif objs.first == '('
+      deserialized_objs = deserialize_key_value_pair(objs)
     elsif /^object/ =~ objs.first
       object_data = objs.first.split(";", 3) # Parameter for at accounte for tomme strings
       klass_name = object_data[1]
@@ -135,34 +132,27 @@ class Database
     deserialized_objs
   end
 
-  def matching_delimiter(objs, opening_delim, pos)
-    closing_delim = case opening_delim
-    when '{'
-      '}'
-    when '['
-      ']'
-    else
-      raise 'Invalid delimiter'
+  def deserialize_key_value_pair(objs)
+    i = 1
+    pair = []
+
+    2.times do
+      j = next_element_index(objs, '(', i) || objs.length - 1
+      pair << deserialize_objects(objs[i+1...j])
+      i = j
     end
 
-    level = 1
-
-    objs[pos+1..-1].each_with_index do |object, index|
-      if object[0] == closing_delim
-        level -= 1
-        return index if level == 0
-      elsif object[-1] == opening_delim
-        level += 1
-      end
-    end
+    pair
   end
 
   def next_element_index(objs, opening_delim, pos)
     closing_delim, char = case opening_delim
-    when '{'
-      ['}', '--']
     when '['
       [']', '-']
+    when '{'
+      ['}', '--']
+    when '('
+      [')', '---']
     else
       raise 'Invalid delimiter'
     end

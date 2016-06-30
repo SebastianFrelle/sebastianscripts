@@ -6,7 +6,7 @@ class Database2Test < Minitest::Test
     def initialize(*args)
       i = 0
       args.each { |param| instance_variable_set("@var#{i+=1}", param) }
-      # @timestamp = Time.now
+      @timestamp = Time.now
     end
 
     def ==(other)
