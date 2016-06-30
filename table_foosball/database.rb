@@ -5,7 +5,7 @@ class Database
   end
 
   def clear
-    File.truncate("./#{@filename}", 0)
+    File.truncate(@filename, 0)
   end
 
   def save(objs)
@@ -17,60 +17,13 @@ class Database
   end
 
   def load
-    file = File.open(@filename, "r")
-    file.rewind
+    serialized_objs = File.read(@filename)
+    return nil if serialized_objs == ""
 
-    serialized_objects = file.read
-
-    return nil if serialized_objects == ""
-
-    objects = read_objects(serialized_objects)
-
-    deserialize_objects(objects)
+    deserialize_objects(serialized_objs.split("\n"))
   end
 
   private
-
-  # def serialize_objects(objs)
-  #   serialized_objects = ""
-
-  #   if objs.kind_of?(Array)
-  #     serialized_objects << "["
-
-  #     objs.each do |object|
-  #       serialized_objects << "#{serialize_objects(object)}"
-  #     end
-
-  #     serialized_objects << "]\n"
-  #   elsif !objs.instance_variables.empty?
-  #     serialized_objects << "\nobject:#{objs.class.name}\n{\n"
-
-  #     variables = {}
-
-  #     objs.instance_variables.each do |variable_name|
-  #       variables[variable_name] = objs.instance_variable_get(variable_name)
-  #     end
-
-  #     variables.each do |variable_name, value|
-  #       serialized_objects << "#{variable_name}:#{serialize_objects(value)}"
-  #     end
-
-  #     serialized_objects << "}\n"
-  #   else
-  #     serialized_objects << case objs.class.name
-  #     when "String"
-  #       "\'#{objs}\'\n"
-  #     when "Fixnum"
-  #       "#{objs}\n"
-  #     when "Time"
-  #       "Time:#{objs.to_i}\n"
-  #     else
-  #       "#{objs.class.name}:#{objs}\n"
-  #     end
-  #   end
-
-  #   serialized_objects
-  # end
 
   def serialize_objects(objs)
     serialized_objs = ""
@@ -78,26 +31,22 @@ class Database
     case objs.class.name
     when "Array"
       serialized_objs << "[\n"
-
       objs.each do |object|
-        serialized_objs << "#{serialize_objects(object)}"
+        serialized_objs << "-\n#{serialize_objects(object)}\n"
       end
-
-      serialized_objs << "]\n"
+      serialized_objs << "]"
     when "Hash"
       serialized_objs << "{\n"
       
       objs.each do |key, value|
-        serialized_objs << "#{serialize_objects(key).chomp};#{serialize_objects(value).chomp}\n"
+        serialized_objs << "--\n(\n---\n#{serialize_objects(key).chomp}\n---\n#{serialize_objects(value).chomp}\n)\n"
       end
-
-      serialized_objs << "}\n"
-
-    else
       
-      if !objs.instance_variables.empty?
-        serialized_objs << "object:#{objs.class}"
+      serialized_objs << "}"
+    else
+      serialized_objs << "object;#{objs.class}"
 
+      if !objs.instance_variables.empty?
         variables = {}
         objs.instance_variables.each do |variable_name|
           variables[variable_name] = objs.instance_variable_get(variable_name)
@@ -105,134 +54,131 @@ class Database
 
         serialized_objs << "\n#{serialize_objects(variables)}"
       else
-        serialized_objs << "#{objs.class}=#{objs}"
+        serialized_objs << ";#{value_handler(objs)}"
       end
     end
 
     serialized_objs
   end
 
-  def deserialize_objects(objects)
-    if objects.first.last == "["
-      deserialized_obj = []
-      
-      i = 1
-      loop do
-        if objects[i].first == "["
-          k = find_matching_bracket(objects, i) + 1
-        else
-          k = find_next_object(objects, i) || objects.count - 1
-        end
-        deserialized_obj << deserialize_objects(objects[i...k])
+  def deserialize_objects(objs)
+    if /^object/ =~ objs.first
+      object_data = objs.first.split(";", 3) # 3 to account for empty strings
+      klass_name = object_data[1]
 
-        break if k == objects.count - 1
-        i = k
+      if object_data.length == 2 # the object has instance variables instead of a value
+        deserialized_objs = Kernel.const_get(klass_name).allocate
+        
+        variables = deserialize_objects(objs[1..-1])
+        
+        variables.each do |variable_name, variable_value|
+          deserialized_objs.instance_variable_set(variable_name, variable_value)
+        end
+      else
+        deserialized_objs = deserialize_simple_object(object_data)
       end
-    elsif objects.first.last.split(":").first == "object"
-      klass_name = objects.first.last
-      object_klass = Kernel.const_get(klass_name)
-      deserialized_obj = object_klass.allocate
-      
-      variables = {}
+    elsif objs.first[-1] == '['
+      deserialized_objs = []
 
       i = 1
-      while i < objects.count
-        variable_name = objects[i].first.slice(/[^@].*/).to_sym
+      while true
+        break if objs[i] == ']'
+        j = next_element_index(objs, '[', i) || objs.length
+        deserialized_objs << deserialize_objects(objs[i+1...j])
 
-        if objects[i].last == "["
-          j = find_matching_bracket(objects, i)
-          variables[variable_name] = deserialize_objects(objects[i..j])
-          i = j
-        else
-          variables[variable_name] = value_handler(objects[i].last)
-        end
-
-        i += 1
+        break if j >= objs.length
+        i = j
       end
+    elsif objs.first[-1] == '{'
+      deserialized_objs = {}
 
-      variables.each do |name, value|
-        deserialized_obj.instance_variable_set("@#{name}", value)
+      i = 1
+      while true
+        break if objs[i] == '}'
+
+        j = next_element_index(objs, '{', i) || objs.length - 1
+
+        key, value = deserialize_key_value_pair(objs[i+1...j])
+
+        deserialized_objs[key] = value
+
+        break if j >= objs.length - 1
+        i = j
       end
+    end
 
+    deserialized_objs
+  end
+
+  def value_handler(object)
+    if object.class.name == "Time"
+      object.to_r
     else
-      deserialized_obj = value_handler(objects)
+      object
     end
-
-    deserialized_obj
   end
 
-  def read_objects(input_lines)
-    objects = input_lines.split("\n").map do |line|
-      line.split(":", 2)
-    end
 
-    objects
+  def deserialize_simple_object(object_data)
+    klass_name = object_data[1]
+
+    case klass_name
+    when "String"
+      object_data[2]
+    when "Fixnum"
+      object_data[2].to_i
+    when "Float"
+      object_data[2].to_f
+    when "Rational"
+      object_data[2].to_r
+    when "Symbol"
+      object_data[2].to_sym
+    when "Time"
+      Time.at(object_data[2].to_r)
+    when "NilClass"
+      nil
+    else
+      raise 'Class unknown/not supported by database'
+    end
   end
 
-  def find_matching_bracket(strings, index)
-    bracket_count = 1
+  def deserialize_key_value_pair(objs)
+    i = 1
+    pair = []
 
-    for j in index+1...strings.count
-      if strings[j].last == "["
-        bracket_count += 1
-      elsif strings[j].last == "]"
-        bracket_count -= 1
-      end
-      return j if bracket_count == 0
+    2.times do
+      j = next_element_index(objs, '(', i) || objs.length - 1
+      pair << deserialize_objects(objs[i+1...j])
+      i = j
     end
 
-    j
+    pair
   end
 
-  def find_next_object(strings, index)
-    bracket_count = 1
+  def next_element_index(objs, opening_delim, pos)
+    closing_delim, char = case opening_delim
+    when '['
+      [']', '-']
+    when '{'
+      ['}', '--']
+    when '('
+      [')', '---']
+    else
+      raise 'Invalid delimiter'
+    end
 
-    for i in index+1...strings.count
-      return i if bracket_count == 1 && strings[i].first[0] != '@'
+    level = 1
 
-      if strings[i].last == "["
-        bracket_count += 1
-      elsif strings[i].last == "]"
-        bracket_count -= 1
+    objs[pos+1..-1].each_with_index do |object, index|
+      return index + pos + 1 if level == 1 && object == char
+
+      if object == closing_delim
+        level -= 1
+      elsif object[-1] == opening_delim
+        level += 1
       end
     end
     nil
   end
 
-  def find_matching_brace(strings, index)
-    bracket_count = 1
-
-    for j in index+1...strings.count
-      if strings[j].last == "{"
-        bracket_count += 1
-      elsif strings[j].last == "}"
-        bracket_count -= 1
-      end
-      return j if bracket_count == 0
-    end
-
-    j
-  end
-
-  def value_handler value_string
-    if value_string.kind_of? String
-      value_string = value_string.split(":", 2)
-    end
-
-    value_string.flatten!
-
-    string_regex = /[^']*[^']/
-
-    unless (value_string.last =~ string_regex) == 0
-      value = value_string.last.slice(string_regex)
-    else
-      if value_string.first == "Time"
-        value = Time.at(value_string.last.to_i)
-      else
-        value = value_string.last.to_i
-      end
-    end
-
-    value
-  end
 end
