@@ -62,7 +62,7 @@ class Database
   end
 
   def deserialize_objects(objs)
-    if /^object/ =~ objs.first
+    if /\Aobject/ =~ objs.first
       object_data = objs.first.split(";", 3) # 3 to account for empty strings
       klass_name = object_data[1]
 
