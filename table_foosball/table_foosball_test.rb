@@ -10,7 +10,8 @@ class FoosballTest < Minitest::Test
   end
 
   def teardown
-    Game.games = []
+    Game.games = nil
+    Game.clear
   end
 
   def test_create_new_player

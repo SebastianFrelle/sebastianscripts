@@ -1,14 +1,34 @@
+require_relative "./database"
 require "securerandom"
 
 class Player
-  def initialize name
-    @name = name
+  class << self
+    def players
+      @players ||= database.load || []
+    end
 
+    def players=(player_set)
+      @players = player_set
+    end
+
+    def create(name)
+      players << Player.new(name)
+      persist(players)
+      players.last
+    end
+
+    def by_name(name)
+      players.find { |player| player.name.downcase == name.downcase }
+    end    
+  end
+
+  def initialize(name)
+    @name = name
     @timestamp = Time.now
     @id = SecureRandom.uuid
   end
 
-  attr_reader :name, :timestamp, :id
+  attr_accessor :name, :timestamp, :id
 
   def games
     Game.all.select { |game| game.players.include?(self) }
@@ -19,7 +39,7 @@ class Player
   end
 
   def lost_games
-    games.select {|game| game.loser.include?(self)}
+    games.select { |game| game.loser.include?(self) }
   end
 
   def games_against(opponent)
@@ -41,24 +61,48 @@ class Player
     most_frequent_opponent lost_games
   end
 
+  private
+
+  def self.database
+    @database ||= Database.new(:players)
+  end
+
+  def self.persist(objs)
+    database.save(objs)
+  end
+
+  def self.clear
+    @database.clear
+    self.players = nil
+  end
 end
 
 class Game
-  def self.all
-    @games || []
+  class << self
+    def games
+      @games ||= database.load || []
+    end
+
+    def games=(game_set)
+      @games = game_set
+    end
+
+    def clear
+      database.clear
+      self.games = nil
+    end
+
+    alias_method :all, :games
+    alias_method :all=, :games=
+
+    def create(side1, side2, side1score, side2score)
+      games << Game.new(side1, side2, side1score, side2score)
+      persist(games)
+      games.last
+    end
   end
 
-  def self.games=(game_set)
-    @games = game_set
-  end
-
-  def self.create(side1, side2, side1score, side2score)
-    @games ||= []
-    @games << Game.new(side1, side2, side1score, side2score)
-    @games.last
-  end
-
-  def initialize side1, side2, side1score, side2score
+  def initialize(side1, side2, side1score, side2score)
     @side1 = side1
     @side2 = side2
 
@@ -85,5 +129,15 @@ class Game
 
   def opponents player
     @side1.include?(player) ? @side2 : @side1
+  end
+  
+  private
+
+  def self.database
+    @database ||= Database.new(:games)
+  end
+
+  def self.persist(objs)
+    database.save(objs)
   end
 end
