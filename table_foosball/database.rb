@@ -62,7 +62,7 @@ class Database
   end
 
   def deserialize_objects(objs)
-    if /^object/ =~ objs.first
+    if /\Aobject/ =~ objs.first
       object_data = objs.first.split(";", 3) # 3 to account for empty strings
       klass_name = object_data[1]
 
@@ -84,6 +84,7 @@ class Database
       while true
         break if objs[i] == ']'
         j = next_element_index(objs, '[', i) || objs.length
+        
         deserialized_objs << deserialize_objects(objs[i+1...j])
 
         break if j >= objs.length
@@ -95,11 +96,9 @@ class Database
       i = 1
       while true
         break if objs[i] == '}'
-
         j = next_element_index(objs, '{', i) || objs.length - 1
-
+        
         key, value = deserialize_key_value_pair(objs[i+1...j])
-
         deserialized_objs[key] = value
 
         break if j >= objs.length - 1
@@ -117,7 +116,6 @@ class Database
       object
     end
   end
-
 
   def deserialize_simple_object(object_data)
     klass_name = object_data[1]
@@ -180,5 +178,4 @@ class Database
     end
     nil
   end
-
 end
